@@ -5,6 +5,13 @@
 A solo or two-player cooperative terminal roguelike built with Rust and Ratatui. Descend through ten dungeon levels, slay monsters, loot chests, and confront the undying Lich before it destroys you both.
 
 Built with Claude Code as a fun project.
+
+---
+
+## Screenshots
+
+![Solo gameplay](game-solo.png)
+
 ---
 
 ## Requirements
