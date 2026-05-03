@@ -4,6 +4,7 @@
 
 A solo or two-player cooperative terminal roguelike built with Rust and Ratatui. Descend through ten dungeon levels, slay monsters, loot chests, and confront the undying Lich before it destroys you both.
 
+Built with Claude Code as a fun project.
 ---
 
 ## Requirements
@@ -20,7 +21,7 @@ cargo build --release
 ./target/release/daggerdeep
 ```
 
-Pre-built binaries for macOS Intel, macOS ARM, Linux x64, and Windows x64 are available as GitHub Actions artifacts on each push to `main`.
+Pre-built binaries for macOS ARM, Linux x64, and Windows x64 are available as GitHub Actions artifacts on each push to `main`.
 
 ---
 
