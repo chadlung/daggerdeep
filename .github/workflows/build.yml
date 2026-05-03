@@ -72,14 +72,15 @@ jobs:
 
       - name: Rename binaries for release
         run: |
-          mv artifacts/daggerdeep-linux-x64/daggerdeep   artifacts/daggerdeep-linux-x64
-          mv artifacts/daggerdeep-macos-arm/daggerdeep   artifacts/daggerdeep-macos-arm
-          mv artifacts/daggerdeep-windows-x64/daggerdeep.exe artifacts/daggerdeep-windows-x64.exe
+          mkdir release-assets
+          mv artifacts/daggerdeep-linux-x64/daggerdeep     release-assets/daggerdeep-linux-x64
+          mv artifacts/daggerdeep-macos-arm/daggerdeep     release-assets/daggerdeep-macos-arm
+          mv artifacts/daggerdeep-windows-x64/daggerdeep.exe release-assets/daggerdeep-windows-x64.exe
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            artifacts/daggerdeep-linux-x64
-            artifacts/daggerdeep-macos-arm
-            artifacts/daggerdeep-windows-x64.exe
+            release-assets/daggerdeep-linux-x64
+            release-assets/daggerdeep-macos-arm
+            release-assets/daggerdeep-windows-x64.exe
