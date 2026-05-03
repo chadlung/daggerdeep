@@ -230,12 +230,11 @@ fn run_loop_host(
                 p2_connected = false;
             }
         }
-
-        if matches!(game.state, GameState::GameOver | GameState::Victory) {
-            break;
-        }
     }
+    // Send final state so P2 sees the end screen, then disconnect.
     if p2_connected {
+        let net_state = game.to_net_state();
+        let _ = net::send_msg(&mut write_stream, &ServerMsg::State(net_state));
         let _ = net::send_msg(&mut write_stream, &ServerMsg::Disconnected);
     }
     let _ = write_stream.shutdown(std::net::Shutdown::Both);
@@ -288,7 +287,10 @@ fn run_loop_client(
                     net_state = Some(s);
                 }
                 ServerMsg::Disconnected => {
-                    solo_game = net_state.as_ref().and_then(Game::from_net_state_solo);
+                    let is_terminal = net_state.as_ref().is_some_and(|s| s.state == 1 || s.state == 2);
+                    if !is_terminal {
+                        solo_game = net_state.as_ref().and_then(Game::from_net_state_solo);
+                    }
                     break 'client;
                 }
             }
@@ -344,6 +346,19 @@ fn run_loop_client(
 
     if let Some(mut g) = solo_game {
         run_loop(terminal, &mut g)?;
+    } else if net_state.as_ref().is_some_and(|s| s.state == 1 || s.state == 2) {
+        // Game ended normally — show the end screen and wait for a keypress.
+        loop {
+            if let Some(ref s) = net_state {
+                terminal.draw(|frame| render::render_net_state(frame, s))?;
+            }
+            if event::poll(Duration::from_millis(50))?
+                && let Event::Key(key) = event::read()?
+                && key.kind == KeyEventKind::Press {
+                    let _ = key;
+                    break;
+            }
+        }
     } else {
         terminal.draw(render::render_disconnected)?;
         event::read()?;
