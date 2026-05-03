@@ -3,7 +3,7 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
-use crossterm::event::{self, Event, KeyCode};
+use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use ratatui::{
     Frame,
     backend::CrosstermBackend,
@@ -28,7 +28,8 @@ pub fn run_menu(
     loop {
         terminal.draw(render_main_menu)?;
 
-        if let Event::Key(key) = event::read()? {
+        if let Event::Key(key) = event::read()?
+            && key.kind == KeyEventKind::Press {
             match key.code {
                 KeyCode::Char('s') | KeyCode::Char('S') => return Ok(MenuResult::SinglePlayer),
                 KeyCode::Char('h') | KeyCode::Char('H') => {
@@ -111,6 +112,7 @@ fn run_host_screen(
 
         if event::poll(Duration::from_millis(120))?
             && let Event::Key(key) = event::read()?
+                && key.kind == KeyEventKind::Press
                 && key.code == KeyCode::Esc {
                     cancel_tx.send(()).ok();
                     return Ok(None);
@@ -156,7 +158,8 @@ fn run_join_screen(
         let err_clone = error_msg.clone();
         terminal.draw(move |frame| render_join(frame, &input_clone, &err_clone))?;
 
-        if let Event::Key(key) = event::read()? {
+        if let Event::Key(key) = event::read()?
+            && key.kind == KeyEventKind::Press {
             match key.code {
                 KeyCode::Esc => return Ok(None),
                 KeyCode::Enter => {
