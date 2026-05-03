@@ -146,8 +146,13 @@ impl Game {
                 );
                 self.status_msg = format!("{} {}", atk_msg, def_msg);
                 if died {
-                    self.state = GameState::GameOver;
-                    return;
+                    if self.multiplayer {
+                        self.respawn_player1();
+                        self.status_msg = String::from("You were defeated and respawned!");
+                    } else {
+                        self.state = GameState::GameOver;
+                        return;
+                    }
                 }
             }
             return;
@@ -188,6 +193,13 @@ impl Game {
                 self.next_level();
             }
         }
+    }
+
+    fn respawn_player1(&mut self) {
+        let (rx, ry) = self.map.rooms.first().map(|r| r.center()).unwrap_or((1, 1));
+        self.player.x = rx;
+        self.player.y = ry;
+        self.player.hp = (self.player.max_hp / 2).max(1);
     }
 
     fn respawn_player2(&mut self) {
@@ -325,8 +337,13 @@ impl Game {
             } else {
                 self.player.hp -= damage;
                 if self.player.hp <= 0 {
-                    self.state = GameState::GameOver;
-                    self.status_msg = String::from("The chest was a trap! You have perished in Dagger Deep.");
+                    if self.multiplayer {
+                        self.respawn_player1();
+                        self.status_msg = String::from("The chest was a trap! You were defeated and respawned!");
+                    } else {
+                        self.state = GameState::GameOver;
+                        self.status_msg = String::from("The chest was a trap! You have perished in Dagger Deep.");
+                    }
                 } else {
                     self.status_msg = format!(
                         "The chest was a trap! You take {} damage! ({} HP left)",
@@ -392,8 +409,13 @@ impl Game {
                 );
                 self.status_msg = msg;
                 if died {
-                    self.state = GameState::GameOver;
-                    return;
+                    if self.multiplayer {
+                        self.respawn_player1();
+                        self.status_msg = String::from("You were defeated and respawned!");
+                    } else {
+                        self.state = GameState::GameOver;
+                        return;
+                    }
                 }
             } else if self.player2.as_ref().is_some_and(|p| p.x == nx && p.y == ny) {
                 let (msg, died) = crate::combat::resolve_monster_attack(
