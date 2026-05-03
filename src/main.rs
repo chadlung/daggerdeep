@@ -14,7 +14,7 @@ use std::time::Duration;
 use std::io::ErrorKind;
 
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyModifiers},
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind, KeyModifiers},
     execute,
     terminal::{
         disable_raw_mode, enable_raw_mode, size, EnterAlternateScreen, LeaveAlternateScreen,
@@ -94,7 +94,8 @@ fn run_loop(
     loop {
         terminal.draw(|frame| render::render_game(frame, game))?;
 
-        if let Event::Key(key) = event::read()? {
+        if let Event::Key(key) = event::read()?
+            && key.kind == KeyEventKind::Press {
             match game.state {
                 GameState::Playing => match key.code {
                     KeyCode::Esc => game.state = GameState::ConfirmQuit,
@@ -178,7 +179,8 @@ fn run_loop_host(
         let mut action_taken = false;
 
         if event::poll(Duration::from_millis(50))?
-            && let Event::Key(key) = event::read()? {
+            && let Event::Key(key) = event::read()?
+            && key.kind == KeyEventKind::Press {
                 match game.state {
                     GameState::Playing => match key.code {
                         KeyCode::Esc => game.state = GameState::ConfirmQuit,
@@ -302,7 +304,8 @@ fn run_loop_client(
             }
 
         if event::poll(Duration::from_millis(50))?
-            && let Event::Key(key) = event::read()? {
+            && let Event::Key(key) = event::read()?
+            && key.kind == KeyEventKind::Press {
                 match key.code {
                     KeyCode::Esc => {
                         let _ = net::send_msg(&mut write_stream, &ClientMsg::Quit);
