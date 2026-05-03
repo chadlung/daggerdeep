@@ -1,0 +1,26 @@
+# Rust build output
+/target/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Superpowers plugin configs and workflow state
+.superpowers/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
