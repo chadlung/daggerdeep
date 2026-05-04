@@ -30,6 +30,7 @@ pub struct NetPlayer {
     pub y: usize,
     pub hp: i32,
     pub max_hp: i32,
+    pub respawns_left: u8,
 }
 
 #[derive(Serialize, Deserialize, Clone)]

@@ -98,8 +98,8 @@ Every time you **kill a monster**, your maximum HP permanently increases by 1 an
 
 When a monster hits you, your current HP is reduced. If HP reaches 0:
 
-- **Single player / Player 1 (host)** — Game over.
-- **Player 2 (client)** — Respawned at the start of the level with **half their maximum HP**. The game continues.
+- **Single player** — Game over.
+- **Multiplayer (both players)** — Each player has **2 respawns**. On respawn they return to the start of the level at **full HP**. When respawns are exhausted: Player 1 triggers game over; Player 2 is permanently removed and Player 1 continues solo.
 
 ---
 
@@ -148,7 +148,6 @@ Dagger Deep supports **two-player cooperative** play over a local network (TCP).
 - Stairs only appear once **all monsters** on the level are dead. Either player can descend.
 - If Player 2 disconnects mid-game, Player 1 continues in **solo mode**.
 - If Player 1 (host) disconnects, Player 2 **continues solo** using the last known dungeon state, taking over their character.
-- Each player has a **500 ms movement cooldown** — you may move at most twice per second. This applies to both players independently.
 
 ### Map Legend
 

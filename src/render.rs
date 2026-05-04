@@ -139,6 +139,7 @@ pub fn render_net_state(frame: &mut Frame, state: &NetGameState) {
                 Style::default().fg(hp_color(state.player1.hp, state.player1.max_hp)),
             ),
         ]),
+        Line::raw(format!("Respawns: {}", state.player1.respawns_left)),
     ];
     if let Some(ref p2) = state.player2 {
         sidebar_lines.push(Line::raw(""));
@@ -150,6 +151,7 @@ pub fn render_net_state(frame: &mut Frame, state: &NetGameState) {
                 Style::default().fg(hp_color(p2.hp, p2.max_hp)),
             ),
         ]));
+        sidebar_lines.push(Line::raw(format!("Respawns: {}", p2.respawns_left)));
     }
     sidebar_lines.extend([
         Line::raw(""),
@@ -317,6 +319,9 @@ fn render_sidebar(frame: &mut Frame, game: &Game, area: Rect) {
             ),
         ]),
     ];
+    if game.multiplayer {
+        lines.push(Line::raw(format!("Respawns: {}", game.player.respawns_left)));
+    }
 
     if let Some(ref p2) = game.player2 {
         lines.push(Line::raw(""));
@@ -331,6 +336,7 @@ fn render_sidebar(frame: &mut Frame, game: &Game, area: Rect) {
                 Style::default().fg(hp_color(p2.hp, p2.max_hp)),
             ),
         ]));
+        lines.push(Line::raw(format!("Respawns: {}", p2.respawns_left)));
     }
 
     lines.push(Line::raw(""));

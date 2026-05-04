@@ -52,6 +52,7 @@ pub struct Player {
     pub y: usize,
     pub hp: i32,
     pub max_hp: i32,
+    pub respawns_left: u8,
 }
 
 impl Player {
@@ -61,6 +62,7 @@ impl Player {
             y,
             hp: 100,
             max_hp: 100,
+            respawns_left: 2,
         }
     }
 }
