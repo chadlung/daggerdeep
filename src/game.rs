@@ -146,9 +146,8 @@ impl Game {
                 );
                 self.status_msg = format!("{} {}", atk_msg, def_msg);
                 if died {
-                    if self.multiplayer {
-                        self.respawn_player1();
-                        self.status_msg = String::from("You were defeated and respawned!");
+                    if self.multiplayer && self.respawn_player1() {
+                        self.status_msg = format!("You were defeated and respawned! ({} respawn(s) left)", self.player.respawns_left);
                     } else {
                         self.state = GameState::GameOver;
                         return;
@@ -195,20 +194,29 @@ impl Game {
         }
     }
 
-    fn respawn_player1(&mut self) {
+    fn respawn_player1(&mut self) -> bool {
+        if self.player.respawns_left == 0 {
+            return false;
+        }
         let (rx, ry) = self.map.rooms.first().map(|r| r.center()).unwrap_or((1, 1));
         self.player.x = rx;
         self.player.y = ry;
-        self.player.hp = (self.player.max_hp / 2).max(1);
+        self.player.hp = self.player.max_hp;
+        self.player.respawns_left -= 1;
+        true
     }
 
-    fn respawn_player2(&mut self) {
-        let (rx, ry) = self.map.rooms.first().map(|r| r.center()).unwrap_or((1, 1));
-        if let Some(p2) = self.player2.as_mut() {
-            p2.x = rx + 1;
-            p2.y = ry;
-            p2.hp = p2.max_hp / 2;
+    fn respawn_player2(&mut self) -> bool {
+        let Some(p2) = self.player2.as_mut() else { return false; };
+        if p2.respawns_left == 0 {
+            return false;
         }
+        let (rx, ry) = self.map.rooms.first().map(|r| r.center()).unwrap_or((1, 1));
+        p2.x = rx + 1;
+        p2.y = ry;
+        p2.hp = p2.max_hp;
+        p2.respawns_left -= 1;
+        true
     }
 
     pub fn move_player2(&mut self, dx: i32, dy: i32) {
@@ -257,8 +265,13 @@ impl Game {
                 );
                 self.status_msg2 = format!("{} {}", atk_msg, def_msg);
                 if died {
-                    self.respawn_player2();
-                    self.status_msg2 = String::from("You were defeated and respawned!");
+                    if self.respawn_player2() {
+                        let left = self.player2.as_ref().map_or(0, |p| p.respawns_left);
+                        self.status_msg2 = format!("You were defeated and respawned! ({} respawn(s) left)", left);
+                    } else {
+                        self.player2 = None;
+                        self.status_msg2 = String::from("You have no respawns left. You perished!");
+                    }
                 }
             }
             return;
@@ -329,17 +342,21 @@ impl Game {
                     p2.hp
                 };
                 if hp_after <= 0 {
-                    self.respawn_player2();
-                    self.status_msg2 = String::from("The chest was a trap! You were defeated and respawned!");
+                    if self.respawn_player2() {
+                        let left = self.player2.as_ref().map_or(0, |p| p.respawns_left);
+                        self.status_msg2 = format!("The chest was a trap! You were defeated and respawned! ({} respawn(s) left)", left);
+                    } else {
+                        self.player2 = None;
+                        self.status_msg2 = String::from("The chest was a trap! You have no respawns left. You perished!");
+                    }
                 } else {
                     self.status_msg2 = format!("The chest was a trap! You take {} damage! ({} HP left)", damage, hp_after.max(0));
                 }
             } else {
                 self.player.hp -= damage;
                 if self.player.hp <= 0 {
-                    if self.multiplayer {
-                        self.respawn_player1();
-                        self.status_msg = String::from("The chest was a trap! You were defeated and respawned!");
+                    if self.multiplayer && self.respawn_player1() {
+                        self.status_msg = format!("The chest was a trap! You were defeated and respawned! ({} respawn(s) left)", self.player.respawns_left);
                     } else {
                         self.state = GameState::GameOver;
                         self.status_msg = String::from("The chest was a trap! You have perished in Dagger Deep.");
@@ -409,9 +426,8 @@ impl Game {
                 );
                 self.status_msg = msg;
                 if died {
-                    if self.multiplayer {
-                        self.respawn_player1();
-                        self.status_msg = String::from("You were defeated and respawned!");
+                    if self.multiplayer && self.respawn_player1() {
+                        self.status_msg = format!("You were defeated and respawned! ({} respawn(s) left)", self.player.respawns_left);
                     } else {
                         self.state = GameState::GameOver;
                         return;
@@ -426,8 +442,13 @@ impl Game {
                 );
                 self.status_msg2 = msg;
                 if died {
-                    self.respawn_player2();
-                    self.status_msg2 = String::from("You were defeated and respawned!");
+                    if self.respawn_player2() {
+                        let left = self.player2.as_ref().map_or(0, |p| p.respawns_left);
+                        self.status_msg2 = format!("You were defeated and respawned! ({} respawn(s) left)", left);
+                    } else {
+                        self.player2 = None;
+                        self.status_msg2 = String::from("You have no respawns left. You perished!");
+                    }
                 }
             } else {
                 self.monsters[i].x = nx;
@@ -446,7 +467,7 @@ impl Game {
             }
         }
 
-        let player = Player { x: p2.x, y: p2.y, hp: p2.hp, max_hp: p2.max_hp };
+        let player = Player { x: p2.x, y: p2.y, hp: p2.hp, max_hp: p2.max_hp, respawns_left: p2.respawns_left };
 
         let monsters = state.monsters.iter().map(|m| Monster {
             x: m.x,
@@ -529,12 +550,14 @@ impl Game {
                 y: self.player.y,
                 hp: self.player.hp,
                 max_hp: self.player.max_hp,
+                respawns_left: self.player.respawns_left,
             },
             player2: self.player2.as_ref().map(|p| NetPlayer {
                 x: p.x,
                 y: p.y,
                 hp: p.hp,
                 max_hp: p.max_hp,
+                respawns_left: p.respawns_left,
             }),
             monsters: self.monsters.iter().map(|m| NetMonster {
                 x: m.x,
