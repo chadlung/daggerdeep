@@ -10,7 +10,7 @@ mod render;
 use std::net::TcpStream;
 use std::sync::mpsc;
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use std::io::ErrorKind;
 
 use crossterm::{
@@ -172,6 +172,8 @@ fn run_loop_host(
     });
 
     let mut p2_connected = true;
+    let move_cooldown = Duration::from_millis(500);
+    let mut last_p1_move = Instant::now() - move_cooldown;
 
     loop {
         terminal.draw(|frame| render::render_game(frame, game))?;
@@ -184,10 +186,18 @@ fn run_loop_host(
                 match game.state {
                     GameState::Playing => match key.code {
                         KeyCode::Esc => game.state = GameState::ConfirmQuit,
-                        KeyCode::Up => { game.move_player(0, -1); action_taken = true; }
-                        KeyCode::Down => { game.move_player(0, 1); action_taken = true; }
-                        KeyCode::Left => { game.move_player(-1, 0); action_taken = true; }
-                        KeyCode::Right => { game.move_player(1, 0); action_taken = true; }
+                        KeyCode::Up if last_p1_move.elapsed() >= move_cooldown => {
+                            game.move_player(0, -1); action_taken = true; last_p1_move = Instant::now();
+                        }
+                        KeyCode::Down if last_p1_move.elapsed() >= move_cooldown => {
+                            game.move_player(0, 1); action_taken = true; last_p1_move = Instant::now();
+                        }
+                        KeyCode::Left if last_p1_move.elapsed() >= move_cooldown => {
+                            game.move_player(-1, 0); action_taken = true; last_p1_move = Instant::now();
+                        }
+                        KeyCode::Right if last_p1_move.elapsed() >= move_cooldown => {
+                            game.move_player(1, 0); action_taken = true; last_p1_move = Instant::now();
+                        }
                         _ => {}
                     },
                     GameState::ConfirmQuit => match key.code {
@@ -209,6 +219,7 @@ fn run_loop_host(
                         game.move_player2(dx, dy);
                         action_taken = true;
                     }
+                    // Cooldown enforced on the client side; host accepts all received moves.
                 }
                 ClientMsg::Quit => {
                     game.player2 = None;
@@ -271,6 +282,8 @@ fn run_loop_client(
 
     let mut net_state: Option<protocol::NetGameState> = None;
     let mut solo_game: Option<Game> = None;
+    let move_cooldown = Duration::from_millis(500);
+    let mut last_p2_move = Instant::now() - move_cooldown;
 
     'client: loop {
         terminal.draw(|frame| {
@@ -313,29 +326,33 @@ fn run_loop_client(
                         let _ = net::send_msg(&mut write_stream, &ClientMsg::Quit);
                         break;
                     }
-                    KeyCode::Up => {
+                    KeyCode::Up if last_p2_move.elapsed() >= move_cooldown => {
                         if net::send_msg(&mut write_stream, &ClientMsg::Move(0, -1)).is_err() {
                             solo_game = net_state.as_ref().and_then(Game::from_net_state_solo);
                             break 'client;
                         }
+                        last_p2_move = Instant::now();
                     }
-                    KeyCode::Down => {
+                    KeyCode::Down if last_p2_move.elapsed() >= move_cooldown => {
                         if net::send_msg(&mut write_stream, &ClientMsg::Move(0, 1)).is_err() {
                             solo_game = net_state.as_ref().and_then(Game::from_net_state_solo);
                             break 'client;
                         }
+                        last_p2_move = Instant::now();
                     }
-                    KeyCode::Left => {
+                    KeyCode::Left if last_p2_move.elapsed() >= move_cooldown => {
                         if net::send_msg(&mut write_stream, &ClientMsg::Move(-1, 0)).is_err() {
                             solo_game = net_state.as_ref().and_then(Game::from_net_state_solo);
                             break 'client;
                         }
+                        last_p2_move = Instant::now();
                     }
-                    KeyCode::Right => {
+                    KeyCode::Right if last_p2_move.elapsed() >= move_cooldown => {
                         if net::send_msg(&mut write_stream, &ClientMsg::Move(1, 0)).is_err() {
                             solo_game = net_state.as_ref().and_then(Game::from_net_state_solo);
                             break 'client;
                         }
+                        last_p2_move = Instant::now();
                     }
                     _ => {}
                 }
