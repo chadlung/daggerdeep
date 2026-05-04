@@ -148,6 +148,7 @@ Dagger Deep supports **two-player cooperative** play over a local network (TCP).
 - Stairs only appear once **all monsters** on the level are dead. Either player can descend.
 - If Player 2 disconnects mid-game, Player 1 continues in **solo mode**.
 - If Player 1 (host) disconnects, Player 2 **continues solo** using the last known dungeon state, taking over their character.
+- Each player has a **500 ms movement cooldown** — you may move at most twice per second. This applies to both players independently.
 
 ### Map Legend
 
