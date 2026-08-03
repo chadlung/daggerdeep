@@ -16,12 +16,15 @@ pub fn render_game(frame: &mut Frame, game: &Game) {
     // Does not stretch to fill the terminal if it is larger than needed.
     let game_width = (MAP_WIDTH + 19) as u16;
     let game_height = (MAP_HEIGHT + 2) as u16;
+    // Clamp to the real frame: drawing outside the terminal buffer panics in
+    // ratatui, and the terminal can shrink below the minimum size mid-game.
     let area = Rect {
         x: 0,
         y: 0,
         width: game_width,
         height: game_height,
-    };
+    }
+    .intersection(frame.area());
 
     let rows = Layout::default()
         .direction(Direction::Vertical)
@@ -57,7 +60,8 @@ pub fn render_game(frame: &mut Frame, game: &Game) {
 pub fn render_net_state(frame: &mut Frame, state: &NetGameState) {
     let game_width = (MAP_WIDTH + 19) as u16;
     let game_height = (MAP_HEIGHT + 2) as u16;
-    let area = Rect { x: 0, y: 0, width: game_width, height: game_height };
+    let area = Rect { x: 0, y: 0, width: game_width, height: game_height }
+        .intersection(frame.area());
 
     let rows = Layout::default()
         .direction(Direction::Vertical)
