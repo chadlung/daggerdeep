@@ -39,18 +39,34 @@ fn check_terminal_size() -> Result<(), String> {
     }
 }
 
+fn restore_terminal() {
+    let _ = disable_raw_mode();
+    let _ = execute!(io::stdout(), LeaveAlternateScreen, DisableMouseCapture);
+}
+
+/// Restores the terminal on every exit path, including early `?` returns.
+struct TermGuard;
+
+impl Drop for TermGuard {
+    fn drop(&mut self) {
+        restore_terminal();
+    }
+}
+
 fn main() -> Result<(), io::Error> {
     if let Err(msg) = check_terminal_size() {
         eprintln!("Error: {}", msg);
         std::process::exit(1);
     }
 
-    std::panic::set_hook(Box::new(|_| {
-        let _ = disable_raw_mode();
-        let _ = execute!(io::stdout(), LeaveAlternateScreen, DisableMouseCapture);
+    let default_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        restore_terminal();
+        default_hook(info);
     }));
 
     enable_raw_mode()?;
+    let _guard = TermGuard;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     let backend = CrosstermBackend::new(stdout);
@@ -58,12 +74,6 @@ fn main() -> Result<(), io::Error> {
 
     let result = run(&mut terminal);
 
-    disable_raw_mode()?;
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    )?;
     terminal.show_cursor()?;
 
     result
