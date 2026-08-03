@@ -143,6 +143,7 @@ impl Game {
                     &mut self.player,
                     &mut self.rng,
                     self.multiplayer,
+                    self.level,
                 );
                 self.status_msg = format!("{} {}", atk_msg, def_msg);
                 if died {
@@ -263,6 +264,7 @@ impl Game {
                     p2,
                     &mut self.rng,
                     self.multiplayer,
+                    self.level,
                 );
                 self.status_msg2 = format!("{} {}", atk_msg, def_msg);
                 if died {
@@ -424,6 +426,7 @@ impl Game {
                     &mut self.player,
                     &mut self.rng,
                     self.multiplayer,
+                    self.level,
                 );
                 self.status_msg = msg;
                 if died {
@@ -441,6 +444,7 @@ impl Game {
                     p2,
                     &mut self.rng,
                     self.multiplayer,
+                    self.level,
                 );
                 self.status_msg2 = msg;
                 if died {
@@ -622,22 +626,52 @@ fn spawn_monsters(map: &Map, rng: &mut impl Rng, multiplayer: bool, level: u8) -
         }
     }
 
+    // Skeleton: 65% chance on levels 3-5
+    if (3..=5).contains(&level) {
+        maybe_spawn(map, rng, &mut monsters, multiplayer, MonsterKind::Skeleton, 0.65);
+    }
+
+    // Worm: 65% chance past level 5
+    if level > 5 {
+        maybe_spawn(map, rng, &mut monsters, multiplayer, MonsterKind::Worm, 0.65);
+    }
+
     // Lich: 30% on level 9, 90% on level 10
     let lich_chance: f32 = match level {
         9 => 0.30,
         10 => 0.90,
         _ => 0.0,
     };
-    if lich_chance > 0.0 && rng.r#gen::<f32>() < lich_chance
-        && let Some(mut lich) = place_lich(map, rng, &monsters) {
-            if multiplayer { scale_for_multiplayer(&mut lich); }
-            monsters.push(lich);
-        }
+    if lich_chance > 0.0 {
+        maybe_spawn(map, rng, &mut monsters, multiplayer, MonsterKind::Lich, lich_chance);
+    }
 
     monsters
 }
 
-fn place_lich(map: &Map, rng: &mut impl Rng, monsters: &[Monster]) -> Option<Monster> {
+/// Rolls against `chance` and, on success, places one `kind` on the map.
+/// Does nothing if the roll fails or no free tile is available.
+fn maybe_spawn(
+    map: &Map,
+    rng: &mut impl Rng,
+    monsters: &mut Vec<Monster>,
+    multiplayer: bool,
+    kind: MonsterKind,
+    chance: f32,
+) {
+    if rng.r#gen::<f32>() < chance
+        && let Some(mut monster) = place_monster(map, rng, monsters, kind) {
+            if multiplayer { scale_for_multiplayer(&mut monster); }
+            monsters.push(monster);
+        }
+}
+
+fn place_monster(
+    map: &Map,
+    rng: &mut impl Rng,
+    monsters: &[Monster],
+    kind: MonsterKind,
+) -> Option<Monster> {
     // Prefer the last room (farthest from player spawn in first room)
     let rooms = &map.rooms;
     let room = rooms.last()?;
@@ -645,14 +679,14 @@ fn place_lich(map: &Map, rng: &mut impl Rng, monsters: &[Monster]) -> Option<Mon
         let lx = rng.gen_range(room.x..room.x + room.w);
         let ly = rng.gen_range(room.y..room.y + room.h);
         if map.is_walkable(lx, ly) && !monsters.iter().any(|m| m.x == lx && m.y == ly) {
-            return Some(Monster::new(lx, ly, MonsterKind::Lich));
+            return Some(Monster::new(lx, ly, kind));
         }
     }
     // Fallback: any walkable tile
     for y in 0..MAP_HEIGHT {
         for x in 0..MAP_WIDTH {
             if map.is_walkable(x, y) && !monsters.iter().any(|m| m.x == x && m.y == y) {
-                return Some(Monster::new(x, y, MonsterKind::Lich));
+                return Some(Monster::new(x, y, kind));
             }
         }
     }
@@ -700,5 +734,72 @@ fn spawn_chests(map: &mut Map, rng: &mut impl Rng, monsters: &[Monster]) {
         }
         map.set(x, y, Tile::Chest);
         placed += 1;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn of_kind(monsters: &[Monster], kind: MonsterKind) -> impl Iterator<Item = &Monster> {
+        monsters.iter().filter(move |m| m.kind == kind)
+    }
+
+    /// Asserts `kind` appears on every level in `spawns_on` and on no other level,
+    /// carrying `solo_hp` in single-player and `multi_hp` in multiplayer.
+    fn assert_level_gated(kind: MonsterKind, spawns_on: &[u8], solo_hp: i32, multi_hp: i32) {
+        let mut rng = rand::thread_rng();
+        let (mut solo_seen, mut mp_seen) = (0, 0);
+
+        for level in 1..=10u8 {
+            let expected = spawns_on.contains(&level);
+            for _ in 0..40 {
+                let map = dungeon::generate(&mut rng);
+
+                let solo = spawn_monsters(&map, &mut rng, false, level);
+                for m in of_kind(&solo, kind) {
+                    assert!(expected, "{} spawned on level {}", kind.name(), level);
+                    assert_eq!(m.hp, solo_hp);
+                    assert_eq!(m.max_hp, solo_hp);
+                    solo_seen += 1;
+                }
+
+                let multi = spawn_monsters(&map, &mut rng, true, level);
+                for m in of_kind(&multi, kind) {
+                    assert!(expected, "{} spawned on level {}", kind.name(), level);
+                    assert_eq!(m.hp, multi_hp);
+                    assert_eq!(m.max_hp, multi_hp);
+                    mp_seen += 1;
+                }
+            }
+        }
+
+        // At a 65% spawn rate, seeing none across 40 tries per level is impossible in practice.
+        assert!(solo_seen > 0, "no solo {} spawned at all", kind.name());
+        assert!(mp_seen > 0, "no multiplayer {} spawned at all", kind.name());
+    }
+
+    #[test]
+    fn worm_spawns_only_past_level_5() {
+        // 17 through the generic 1.5x scaling: (17 * 3 + 1) / 2 == 26.
+        assert_level_gated(MonsterKind::Worm, &[6, 7, 8, 9, 10], 17, 26);
+    }
+
+    #[test]
+    fn skeleton_spawns_only_on_levels_3_to_5() {
+        // 7 through the generic 1.5x scaling: (7 * 3 + 1) / 2 == 11.
+        assert_level_gated(MonsterKind::Skeleton, &[3, 4, 5], 7, 11);
+    }
+
+    #[test]
+    fn optional_monsters_round_trip_through_the_wire_encoding() {
+        for (kind, ch, name) in [
+            (MonsterKind::Worm, 'W', "Worm"),
+            (MonsterKind::Skeleton, 'S', "Skeleton"),
+        ] {
+            assert!(MonsterKind::from(kind as u8) == kind);
+            assert_eq!(kind.char(), ch);
+            assert_eq!(kind.name(), name);
+        }
     }
 }

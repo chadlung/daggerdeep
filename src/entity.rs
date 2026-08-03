@@ -5,6 +5,8 @@ pub enum MonsterKind {
     Mage = 1,
     Rat = 2,
     Lich = 3,
+    Worm = 4,
+    Skeleton = 5,
 }
 
 impl From<u8> for MonsterKind {
@@ -13,6 +15,8 @@ impl From<u8> for MonsterKind {
             1 => MonsterKind::Mage,
             2 => MonsterKind::Rat,
             3 => MonsterKind::Lich,
+            4 => MonsterKind::Worm,
+            5 => MonsterKind::Skeleton,
             _ => MonsterKind::Goblin,
         }
     }
@@ -25,6 +29,8 @@ impl MonsterKind {
             MonsterKind::Mage => 'M',
             MonsterKind::Rat => 'R',
             MonsterKind::Lich => 'L',
+            MonsterKind::Worm => 'W',
+            MonsterKind::Skeleton => 'S',
         }
     }
 
@@ -34,6 +40,8 @@ impl MonsterKind {
             MonsterKind::Mage => 12,
             MonsterKind::Rat => 5,
             MonsterKind::Lich => 40,
+            MonsterKind::Worm => 17,
+            MonsterKind::Skeleton => 7,
         }
     }
 
@@ -43,6 +51,8 @@ impl MonsterKind {
             MonsterKind::Mage => "Mage",
             MonsterKind::Rat => "Rat",
             MonsterKind::Lich => "Lich",
+            MonsterKind::Worm => "Worm",
+            MonsterKind::Skeleton => "Skeleton",
         }
     }
 }

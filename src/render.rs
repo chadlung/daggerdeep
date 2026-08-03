@@ -105,6 +105,8 @@ pub fn render_net_state(frame: &mut Frame, state: &NetGameState) {
                     MonsterKind::Mage => Color::Red,
                     MonsterKind::Rat => Color::LightCyan,
                     MonsterKind::Lich => Color::Magenta,
+                    MonsterKind::Worm => Color::LightGreen,
+                    MonsterKind::Skeleton => Color::Gray,
                 };
                 spans.push(Span::styled(
                     kind.char().to_string(),
@@ -166,6 +168,8 @@ pub fn render_net_state(frame: &mut Frame, state: &NetGameState) {
         Line::from(vec![Span::styled("M ", Style::default().fg(Color::Red)), Span::raw("Mage")]),
         Line::from(vec![Span::styled("R ", Style::default().fg(Color::LightCyan)), Span::raw("Rat")]),
         Line::from(vec![Span::styled("L ", Style::default().fg(Color::Magenta)), Span::raw("Lich")]),
+        Line::from(vec![Span::styled("W ", Style::default().fg(Color::LightGreen)), Span::raw("Worm")]),
+        Line::from(vec![Span::styled("S ", Style::default().fg(Color::Gray)), Span::raw("Skeleton")]),
         Line::from(vec![Span::styled("P ", Style::default().fg(Color::Green)), Span::raw("Potion")]),
         Line::from(vec![Span::styled("$ ", Style::default().fg(Color::Yellow)), Span::raw("Chest")]),
         Line::from(vec![Span::styled("$ ", Style::default().fg(Color::Magenta)), Span::raw("Lich drop")]),
@@ -276,6 +280,8 @@ fn render_dungeon(frame: &mut Frame, game: &Game, area: Rect) {
                     MonsterKind::Mage => Color::Red,
                     MonsterKind::Rat => Color::LightCyan,
                     MonsterKind::Lich => Color::Magenta,
+                    MonsterKind::Worm => Color::LightGreen,
+                    MonsterKind::Skeleton => Color::Gray,
                 };
                 spans.push(Span::styled(
                     m.kind.char().to_string(),
@@ -355,6 +361,8 @@ fn render_sidebar(frame: &mut Frame, game: &Game, area: Rect) {
         Line::from(vec![Span::styled("M ", Style::default().fg(Color::Red)), Span::raw("Mage")]),
         Line::from(vec![Span::styled("R ", Style::default().fg(Color::LightCyan)), Span::raw("Rat")]),
         Line::from(vec![Span::styled("L ", Style::default().fg(Color::Magenta)), Span::raw("Lich")]),
+        Line::from(vec![Span::styled("W ", Style::default().fg(Color::LightGreen)), Span::raw("Worm")]),
+        Line::from(vec![Span::styled("S ", Style::default().fg(Color::Gray)), Span::raw("Skeleton")]),
         Line::from(vec![Span::styled("P ", Style::default().fg(Color::Green)), Span::raw("Potion")]),
         Line::from(vec![Span::styled("$ ", Style::default().fg(Color::Yellow)), Span::raw("Chest")]),
         Line::from(vec![Span::styled("$ ", Style::default().fg(Color::Magenta)), Span::raw("Lich drop")]),

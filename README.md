@@ -58,9 +58,12 @@ The dungeon has **10 levels** of procedurally generated rooms and corridors. Eac
 
 | Level | Notable event |
 |-------|---------------|
-| 1–8 | Standard rooms with Goblins, Mages, and Rats |
-| 9 | 30% chance a Lich is present |
-| 10 | 90% chance a Lich is present |
+| 1–2 | Standard rooms with Goblins, Mages, and Rats |
+| 3–5 | Standard rooms, plus a 65% chance a Skeleton is present |
+| 6 | Standard rooms, plus a 65% chance a Worm is present |
+| 7–8 | As above, and **every monster hit deals +2 damage** from here down (the Lich is exempt) |
+| 9 | 65% chance a Worm; 30% chance a Lich |
+| 10 | 65% chance a Worm; 90% chance a Lich |
 
 ---
 
@@ -73,9 +76,21 @@ All monsters use a **d6 hit roll** — a roll of 1–3 misses, 4–6 hits. Damag
 | `G` (Blue) | Goblin | 8 | 12 | 1d6 | — |
 | `M` (Red) | Mage | 12 | 18 | 1d6 | — |
 | `R` (Cyan) | Rat | 5 | 8 | 1d6 | — |
+| `S` (Gray) | Skeleton | 7 | 11 | 1d6 | Only on levels 3–5, and only 65% of the time |
+| `W` (Light Green) | Worm | 17 | 26 | 1d6 | Only past level 5, and only 65% of the time |
 | `L` (Magenta) | Lich | 40 | 60 | 2d6 | Teleports once; drops healing chest on death |
 
 > In multiplayer, all monsters have **1.5× HP** and deal damage equal to the **higher of two d6 rolls** instead of one (except the Lich, which always deals 2d6).
+
+> **Deep dungeon damage** — from **level 7 onward**, every monster hit deals **+2 damage** on top of its normal roll, in both solo and multiplayer, so a Goblin that dealt 1–6 now deals 3–8. A missed attack still deals nothing. **The Lich is exempt** and always deals its original 2d6.
+
+### The Skeleton
+
+The Skeleton is an early-dungeon monster confined to **levels 3 through 5**, with a **65% chance** of appearing on each of them. At 7 HP (11 in multiplayer) it is only slightly tougher than a Goblin, but it spawns in the level's **last room**, so it is usually the final thing between you and the stairs down.
+
+### The Worm
+
+The Worm is a mid-tier monster that only appears **past level 5** — on each of levels 6 through 10 there is a **65% chance** one is present. It has no special abilities and attacks like any ordinary monster, but with 17 HP (26 in multiplayer) it absorbs far more punishment than a Goblin, Mage, or Rat, and it spawns in the level's **last room**, so it tends to be the thing standing between you and a cleared floor.
 
 ### The Lich
 
@@ -127,7 +142,7 @@ When the Lich is defeated it drops a special **magenta `$`** chest. Unlike norma
 
 ## Multiplayer
 
-Dagger Deep supports **two-player cooperative** play over a local network (TCP).
+Dagger Deep supports **two-player cooperative** play over TCP, on a local network or across the internet.
 
 ### Hosting a Game
 
@@ -139,6 +154,17 @@ Dagger Deep supports **two-player cooperative** play over a local network (TCP).
 
 1. Select **[J] Join Game** from the main menu.
 2. Enter the **host's IP address** and press `Enter`. The game will try to connect for up to 5 seconds.
+
+### Local Network vs. Internet Play
+
+**On the same network** (same Wi-Fi or LAN), no setup is needed. The joining player enters the host's local IP — typically something like `192.168.1.42` — and connects directly.
+
+**Across the internet**, it is not that simple. Home routers use NAT and drop unsolicited incoming connections by default, so the host's machine is not reachable from outside their network until a path is opened. The host has two options:
+
+- **Port forwarding.** In the router's admin settings, forward **TCP port 4444** to the host machine's local IP address. The joining player then enters the host's **public** IP (findable at any "what is my IP" site). The host may also need to allow inbound port 4444 through their operating system's firewall.
+- **A tunnel or VPN** (Tailscale, WireGuard, ZeroTier, or an SSH tunnel). This places both machines on one virtual network, and the joining player uses the virtual IP as if it were a LAN address. Nothing on the router needs to change, which makes this the easier and safer route for most people.
+
+> ⚠️ Port forwarding exposes port 4444 to the open internet, and Dagger Deep has **no authentication** — anyone who finds the port can connect as Player 2. Prefer a tunnel or VPN, and close the forwarded port when you are done playing.
 
 ### Multiplayer Rules
 
@@ -158,6 +184,8 @@ Dagger Deep supports **two-player cooperative** play over a local network (TCP).
 | `G` | Blue | Goblin |
 | `M` | Red | Mage |
 | `R` | Cyan | Rat |
+| `S` | Gray | Skeleton |
+| `W` | Light Green | Worm |
 | `L` | Magenta | Lich |
 | `P` | Green | Potion |
 | `$` | Yellow | Chest |
