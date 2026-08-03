@@ -11,7 +11,6 @@ use std::net::TcpStream;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
-use std::io::ErrorKind;
 
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind, KeyModifiers},
@@ -268,9 +267,8 @@ fn run_loop_client(
                         break;
                     }
                 }
-                Err(e) if e.kind() == ErrorKind::WouldBlock || e.kind() == ErrorKind::TimedOut => {
-                    continue;
-                }
+                // Any error is a disconnect. A timeout mid-frame would lose
+                // framing state, so it must not be retried either.
                 Err(_) => {
                     let _ = tx.send(ServerMsg::Disconnected);
                     break;
