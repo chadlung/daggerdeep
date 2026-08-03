@@ -85,7 +85,7 @@ dependencies = [
 
 [[package]]
 name = "daggerdeep"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "bincode",
  "crossterm",
