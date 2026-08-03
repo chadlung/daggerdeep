@@ -239,7 +239,7 @@ impl Game {
         }
 
         if let Some(idx) = self.monsters.iter().position(|m| m.is_alive() && m.x == nx && m.y == ny) {
-            let p2 = self.player2.as_mut().unwrap();
+            let Some(p2) = self.player2.as_mut() else { return; };
             let atk_msg = crate::combat::resolve_player_attack(p2, &mut self.monsters[idx], &mut self.rng);
 
             if !self.monsters[idx].is_alive() {
@@ -257,9 +257,10 @@ impl Game {
                 self.status_msg2 = format!("{} {}", atk_msg, teleport_msg);
                 self.status_msg = self.status_msg2.clone();
             } else {
+                let Some(p2) = self.player2.as_mut() else { return; };
                 let (def_msg, died) = crate::combat::resolve_monster_attack(
                     &self.monsters[idx],
-                    self.player2.as_mut().unwrap(),
+                    p2,
                     &mut self.rng,
                     self.multiplayer,
                 );
@@ -277,13 +278,13 @@ impl Game {
             return;
         }
 
-        let p2 = self.player2.as_mut().unwrap();
+        let Some(p2) = self.player2.as_mut() else { return; };
         p2.x = nx;
         p2.y = ny;
 
         if self.map.get(nx, ny) == Tile::Potion {
             let hp = {
-                let p2 = self.player2.as_mut().unwrap();
+                let Some(p2) = self.player2.as_mut() else { return; };
                 p2.hp = p2.max_hp;
                 p2.hp
             };
@@ -314,7 +315,7 @@ impl Game {
 
     pub fn open_chest(&mut self, is_p2: bool) {
         let (nx, ny) = if is_p2 {
-            let p = self.player2.as_ref().unwrap();
+            let Some(p) = self.player2.as_ref() else { return; };
             (p.x, p.y)
         } else {
             (self.player.x, self.player.y)
@@ -337,7 +338,7 @@ impl Game {
             let damage = crate::combat::roll_d6(&mut self.rng);
             if is_p2 {
                 let hp_after = {
-                    let p2 = self.player2.as_mut().unwrap();
+                    let Some(p2) = self.player2.as_mut() else { return; };
                     p2.hp -= damage;
                     p2.hp
                 };
@@ -434,9 +435,10 @@ impl Game {
                     }
                 }
             } else if self.player2.as_ref().is_some_and(|p| p.x == nx && p.y == ny) {
+                let Some(p2) = self.player2.as_mut() else { continue; };
                 let (msg, died) = crate::combat::resolve_monster_attack(
                     &self.monsters[i],
-                    self.player2.as_mut().unwrap(),
+                    p2,
                     &mut self.rng,
                     self.multiplayer,
                 );
@@ -524,7 +526,7 @@ impl Game {
 
     pub fn open_lich_chest(&mut self, is_p2: bool) {
         let (nx, ny) = if is_p2 {
-            let p = self.player2.as_ref().unwrap();
+            let Some(p) = self.player2.as_ref() else { return; };
             (p.x, p.y)
         } else {
             (self.player.x, self.player.y)
